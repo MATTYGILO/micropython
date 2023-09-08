@@ -28,7 +28,7 @@
 
 // If you want to debug MBEDTLS uncomment the following and
 // pass "3" to mbedtls_debug_set_threshold in socket_new.
-// #define MBEDTLS_DEBUG_C
+#define MBEDTLS_DEBUG_C
 
 // Set mbedtls configuration.
 #define MBEDTLS_DEPRECATED_REMOVED
