@@ -2,7 +2,7 @@ import pyb
 
 print("Executing main.py")
 
-led = pyb.LED(1)
+led = pyb.led(1)
 
 led.on()
 pyb.delay(100)

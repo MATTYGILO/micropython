@@ -5,7 +5,7 @@ import pyb
 
 # creating objects
 accel = pyb.Accel()
-blue = pyb.LED(4)
+blue = pyb.led(4)
 switch = pyb.Switch()
 
 # loop
