@@ -3,7 +3,7 @@
 package(
     "uasyncio",
     (
-        "__init__.py",
+        "device.py",
         "core.py",
         "event.py",
         "funcs.py",

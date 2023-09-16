@@ -62,7 +62,7 @@ import frzmpy1
 
 print(frzmpy1.__file__)
 
-# test import of frozen packages with __init__.py
+# test import of frozen packages with device.py
 import frzstr_pkg1
 
 print(frzstr_pkg1.__file__, frzstr_pkg1.x)
@@ -70,7 +70,7 @@ import frzmpy_pkg1
 
 print(frzmpy_pkg1.__file__, frzmpy_pkg1.x)
 
-# test import of frozen packages without __init__.py
+# test import of frozen packages without device.py
 from frzstr_pkg2.mod import Foo
 
 print(Foo.x)

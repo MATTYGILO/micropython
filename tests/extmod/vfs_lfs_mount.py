@@ -62,7 +62,7 @@ def test(vfs_class):
 
     # import package
     os.mkdir("/lfs/lfspkg")
-    with open("/lfs/lfspkg/__init__.py", "w") as f:
+    with open("/lfs/lfspkg/device.py", "w") as f:
         f.write('print("package")\n')
     import lfspkg
 

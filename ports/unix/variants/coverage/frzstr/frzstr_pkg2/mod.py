@@ -1,4 +1,4 @@
-# test frozen package without __init__.py
+# test frozen package without device.py
 print("frzstr_pkg2.mod")
 
 

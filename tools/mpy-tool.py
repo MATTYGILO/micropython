@@ -1535,8 +1535,8 @@ def freeze_mpy(base_qstrs, compiled_modules):
     print("#ifdef MICROPY_FROZEN_LIST_ITEM")
     for cm in compiled_modules:
         module_name = cm.source_file.str
-        if module_name.endswith("/__init__.py"):
-            short_name = module_name[: -len("/__init__.py")]
+        if module_name.endswith("/device.py"):
+            short_name = module_name[: -len("/device.py")]
         else:
             short_name = module_name[: -len(".py")]
         print('MICROPY_FROZEN_LIST_ITEM("%s", "%s")' % (short_name, module_name))

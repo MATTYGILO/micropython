@@ -1,2 +1,2 @@
-# Testing that "recursive" imports (pkg2/__init__.py imports from pkg2) work
+# Testing that "recursive" imports (pkg2/device.py imports from pkg2) work
 import pkg2

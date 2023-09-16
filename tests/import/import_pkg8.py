@@ -1,2 +1,2 @@
-# import with no __init__.py files
+# import with no device.py files
 import pkg8.mod
