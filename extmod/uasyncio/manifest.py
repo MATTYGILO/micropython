@@ -3,12 +3,13 @@
 package(
     "uasyncio",
     (
-        "device.py",
+        "__init__.py",
         "core.py",
         "event.py",
         "funcs.py",
         "lock.py",
         "stream.py",
+        "task.py"
     ),
     base_path="..",
     opt=3,
