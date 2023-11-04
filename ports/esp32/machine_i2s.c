@@ -472,6 +472,15 @@ STATIC void machine_i2s_init_helper(machine_i2s_obj_t *self, size_t n_pos_args, 
     i2s_config.bits_per_chan = 0;
     #endif
 
+    #if SOC_I2S_SUPPORTS_TDM
+    i2s_config.chan_mask = 0x03;
+    i2s_config.total_chan = 0;
+    i2s_config.left_align = true;
+    i2s_config.big_edin = false;
+    i2s_config.bit_order_msb = false;
+    i2s_config.skip_msk = false;
+    #endif
+
     // I2S queue size equals the number of DMA buffers
     check_esp_err(i2s_driver_install(self->port, &i2s_config, i2s_config.dma_buf_count, &self->i2s_event_queue));
 
