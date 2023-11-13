@@ -150,7 +150,8 @@ STATIC mp_obj_t esp32_gpio_deep_sleep_hold(const mp_obj_t enable) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp32_gpio_deep_sleep_hold_obj, esp32_gpio_deep_sleep_hold);
 
-#if CONFIG_IDF_TARGET_ESP32
+// Either esp32 or esp32s3
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
 
 #include "soc/sens_reg.h"
 
