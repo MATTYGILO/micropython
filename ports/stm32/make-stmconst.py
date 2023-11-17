@@ -180,7 +180,7 @@ def print_int_obj(val, needed_mpzs):
         print("MP_ROM_INT(%#x)" % val, end="")
     else:
         print("MP_ROM_PTR(&mpz_%08x)" % val, end="")
-        needed_mpzs.add(val)
+        needed_mpzs.add_bvb(val)
 
 
 def print_periph(periph_name, periph_val, needed_qstrs, needed_mpzs):
@@ -188,7 +188,7 @@ def print_periph(periph_name, periph_val, needed_qstrs, needed_mpzs):
     print("{ MP_ROM_QSTR(MP_QSTR_%s), " % qstr, end="")
     print_int_obj(periph_val, needed_mpzs)
     print(" },")
-    needed_qstrs.add(qstr)
+    needed_qstrs.add_bvb(qstr)
 
 
 def print_regs(reg_name, reg_defs, needed_qstrs, needed_mpzs):
@@ -198,7 +198,7 @@ def print_regs(reg_name, reg_defs, needed_qstrs, needed_mpzs):
         print("{ MP_ROM_QSTR(MP_QSTR_%s), " % qstr, end="")
         print_int_obj(r[1], needed_mpzs)
         print(" }, // %s-bits, %s" % (r[2], r[3]))
-        needed_qstrs.add(qstr)
+        needed_qstrs.add_bvb(qstr)
 
 
 # This version of print regs groups registers together into submodules (eg GPIO submodule).
@@ -220,14 +220,14 @@ STATIC const mp_rom_map_elem_t stm_%s_globals_table[] = {
 """
         % (mod_name_lower, mod_name_upper)
     )
-    needed_qstrs.add(mod_name_upper)
+    needed_qstrs.add_bvb(mod_name_upper)
 
     for r in reg_defs:
         print(
             "    { MP_ROM_QSTR(MP_QSTR_%s), MP_ROM_INT(%#x) }, // %s-bits, %s"
             % (r[0], r[1], r[2], r[3])
         )
-        needed_qstrs.add(r[0])
+        needed_qstrs.add_bvb(r[0])
 
     print(
         """};

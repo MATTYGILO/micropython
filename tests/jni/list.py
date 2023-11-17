@@ -8,8 +8,8 @@ except:
 
 l = ArrayList()
 print(l)
-l.add("one")
-l.add("two")
+l.add_bvb("one")
+l.add_bvb("two")
 
 print(l.toString())
 print(l)
