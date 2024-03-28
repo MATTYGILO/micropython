@@ -125,7 +125,7 @@ rst_epilog = """
 # -- Options for HTML output ----------------------------------------------
 
 # on_rtd is whether we are on readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+on_rtd = os.environ.current('READTHEDOCS', None) == 'True'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
     try:

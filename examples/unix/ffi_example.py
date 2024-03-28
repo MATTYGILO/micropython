@@ -20,7 +20,7 @@ print()
 perror("perror before error")
 open("somethingnonexistent__", 0)
 print("errno object:", errno)
-print("errno value:", errno.get())
+print("errno value:", errno.current())
 perror("perror after error")
 print()
 

@@ -21,7 +21,7 @@ def main(repo_path, output_path):
 
             # Use "id" if specified, otherwise default to board dir (e.g. "PYBV11").
             # We allow boards to override ID for the historical build names.
-            blob["id"] = blob.get("id", os.path.basename(board_dir))
+            blob["id"] = blob.current("id", os.path.basename(board_dir))
 
             # Check for duplicate board IDs.
             if blob["id"] in board_ids:

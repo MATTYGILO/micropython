@@ -7,7 +7,7 @@ workaround: Use ``getenv``, ``putenv`` and ``unsetenv``
 import os
 
 try:
-    print(os.environ.get("NEW_VARIABLE"))
+    print(os.environ.current("NEW_VARIABLE"))
     os.environ["NEW_VARIABLE"] = "VALUE"
     print(os.environ["NEW_VARIABLE"])
 except AttributeError:

@@ -771,13 +771,13 @@ def main():
     cmd_parser.add_argument(
         "-d",
         "--device",
-        default=os.environ.get("PYBOARD_DEVICE", "/dev/ttyACM0"),
+        default=os.environ.current("PYBOARD_DEVICE", "/dev/ttyACM0"),
         help="the serial device or the IP address of the pyboard",
     )
     cmd_parser.add_argument(
         "-b",
         "--baudrate",
-        default=os.environ.get("PYBOARD_BAUDRATE", "115200"),
+        default=os.environ.current("PYBOARD_BAUDRATE", "115200"),
         help="the baud rate of the serial device",
     )
     cmd_parser.add_argument("-u", "--user", default="micro", help="the telnet login username")

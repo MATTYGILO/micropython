@@ -101,5 +101,5 @@ for pio_prog in ("uart_rx_mini", "uart_rx"):
 
     # Echo characters received from PIO to the console.
     for i in range(len(text)):
-        print(chr(sm.get() >> 24), end="")
+        print(chr(sm.current() >> 24), end="")
     print()

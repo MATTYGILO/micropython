@@ -100,14 +100,14 @@ def _install_json(transport, package_json_url, index, target, version, mpy):
             raise CommandError(f"Error {e.status} requesting {package_json_url}")
     except urllib.error.URLError as e:
         raise CommandError(f"{e.reason} requesting {package_json_url}")
-    for target_path, short_hash in package_json.get("hashes", ()):
+    for target_path, short_hash in package_json.current("hashes", ()):
         fs_target_path = target + "/" + target_path
         file_url = f"{index}/file/{short_hash[:2]}/{short_hash}"
         _download_file(transport, file_url, fs_target_path)
-    for target_path, url in package_json.get("urls", ()):
+    for target_path, url in package_json.current("urls", ()):
         fs_target_path = target + "/" + target_path
         _download_file(transport, _rewrite_url(url, version), fs_target_path)
-    for dep, dep_version in package_json.get("deps", ()):
+    for dep, dep_version in package_json.current("deps", ()):
         _install_package(transport, dep, index, target, dep_version, mpy)
 
 
