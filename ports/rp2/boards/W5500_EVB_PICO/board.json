@@ -4,17 +4,17 @@
     ],
     "docs": "",
     "features": [
-        "Breadboard Friendly",
-        "Castellated Pads",
+        "Dual-core",
         "Ethernet",
-        "Micro USB"
+        "External Flash",
+        "USB"
     ],
     "images": [
         "W5500-EVB-Pico.jpg"
     ],
     "mcu": "rp2040",
-    "product": "Wiznet W5500-EVB-Pico",
+    "product": "W5500-EVB-Pico",
     "thumbnail": "",
-    "url": "https://www.wiznet.io/product-item/w5500-evb-pico/",
-    "vendor": "Wiznet"
+    "url": "https://docs.wiznet.io/Product/iEthernet/W5500/w5500-evb-pico",
+    "vendor": "WIZnet"
 }

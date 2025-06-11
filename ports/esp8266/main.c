@@ -36,22 +36,78 @@
 #include "py/mphal.h"
 #include "py/gc.h"
 
-// This needs to be defined before any ESP SDK headers are included
-#define USE_US_TIMER 1
-
 #include "extmod/misc.h"
+#include "extmod/modmachine.h"
 #include "shared/readline/readline.h"
 #include "shared/runtime/pyexec.h"
 #include "gccollect.h"
 #include "user_interface.h"
 
-#if MICROPY_ESPNOW
+#if MICROPY_PY_ESPNOW
 #include "modespnow.h"
 #endif
 
-STATIC char heap[38 * 1024];
+static char heap[38 * 1024];
 
-STATIC void mp_reset(void) {
+#if MICROPY_HW_HARD_FAULT_DEBUG
+
+static void format_hex(uint32_t hex, char *buffer) {
+    static const char table[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    int offset = 7;
+    uint32_t value = hex;
+    while (offset >= 0) {
+        buffer[offset--] = table[value & 0x0F];
+        value >>= 4;
+    }
+}
+
+static void print_reset_info(void) {
+    struct rst_info *rst_info = system_get_rst_info();
+    if ((rst_info->reason == REASON_WDT_RST) || (rst_info->reason == REASON_EXCEPTION_RST) || (rst_info->reason == REASON_SOFT_WDT_RST)) {
+        char buffer[8];
+        mp_hal_stdout_tx_str("\r\n\r\nThe system restarted due to an error.\r\n\r\nReason: ");
+        switch (rst_info->reason) {
+            case REASON_WDT_RST:
+                mp_hal_stdout_tx_str("WDT");
+                break;
+
+            case REASON_EXCEPTION_RST:
+                mp_hal_stdout_tx_str("EXCEPTION");
+                break;
+
+            case REASON_SOFT_WDT_RST:
+                mp_hal_stdout_tx_str("SOFT_WDT");
+                break;
+
+            default:
+                assert(!"Should not ever get here.");
+                break;
+        }
+        mp_hal_stdout_tx_str(" Cause: ");
+        format_hex(rst_info->exccause, buffer);
+        mp_hal_stdout_tx_strn(buffer, sizeof(buffer));
+        mp_hal_stdout_tx_str(" EPC1: ");
+        format_hex(rst_info->epc1, buffer);
+        mp_hal_stdout_tx_strn(buffer, sizeof(buffer));
+        mp_hal_stdout_tx_str(" EPC2: ");
+        format_hex(rst_info->epc2, buffer);
+        mp_hal_stdout_tx_strn(buffer, sizeof(buffer));
+        mp_hal_stdout_tx_str(" EPC3: ");
+        format_hex(rst_info->epc3, buffer);
+        mp_hal_stdout_tx_strn(buffer, sizeof(buffer));
+        mp_hal_stdout_tx_str(" Exception Vector address: ");
+        format_hex(rst_info->excvaddr, buffer);
+        mp_hal_stdout_tx_strn(buffer, sizeof(buffer));
+        mp_hal_stdout_tx_str(" DEPC: ");
+        format_hex(rst_info->depc, buffer);
+        mp_hal_stdout_tx_strn(buffer, sizeof(buffer));
+        mp_hal_stdout_tx_str("\r\n\r\n");
+    }
+}
+
+#endif
+
+static void mp_reset(void) {
     mp_stack_set_top((void *)0x40000000);
     mp_stack_set_limit(8192);
     mp_hal_init();
@@ -65,26 +121,25 @@ STATIC void mp_reset(void) {
     #endif
     pin_init0();
     readline_init0();
-    dupterm_task_init();
 
     // Activate UART(0) on dupterm slot 1 for the REPL
     {
         mp_obj_t args[2];
         args[0] = MP_OBJ_NEW_SMALL_INT(0);
         args[1] = MP_OBJ_NEW_SMALL_INT(115200);
-        args[0] = MP_OBJ_TYPE_GET_SLOT(&pyb_uart_type, make_new)(&pyb_uart_type, 2, 0, args);
+        args[0] = MP_OBJ_TYPE_GET_SLOT(&machine_uart_type, make_new)(&machine_uart_type, 2, 0, args);
         args[1] = MP_OBJ_NEW_SMALL_INT(1);
         mp_os_dupterm_obj.fun.var(2, args);
     }
 
-    #if MICROPY_ESPNOW
+    #if MICROPY_PY_ESPNOW
     espnow_deinit(mp_const_none);
     #endif
 
     #if MICROPY_MODULE_FROZEN
     pyexec_frozen_module("_boot.py", false);
-    pyexec_file_if_exists("boot.py");
-    if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
+    int ret = pyexec_file_if_exists("boot.py");
+    if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL && ret != 0) {
         pyexec_file_if_exists("main.py");
     }
     #endif
@@ -117,6 +172,10 @@ void init_done(void) {
     pyexec_event_repl_init();
     #endif
 
+    #if MICROPY_HW_HARD_FAULT_DEBUG
+    print_reset_info();
+    #endif
+
     #if !MICROPY_REPL_EVENT_DRIVEN
 soft_reset:
     for (;;) {
@@ -141,7 +200,7 @@ void user_init(void) {
 }
 
 #if !MICROPY_VFS
-mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
+mp_lexer_t *mp_lexer_new_from_file(qstr filename) {
     mp_raise_OSError(MP_ENOENT);
 }
 

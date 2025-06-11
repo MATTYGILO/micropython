@@ -163,8 +163,16 @@ def run_until_complete(main_task=None):
                 # A task waiting on _task_queue; "ph_key" is time to schedule task at
                 dt = max(0, ticks_diff(t.ph_key, ticks()))
             elif not _io_queue.map:
-                # No tasks can be woken so finished running
-                return
+                # No tasks can be woken
+                cur_task = None
+                if not main_task or not main_task.state:
+                    # no main_task, or main_task is done so finished running
+                    return
+                # At this point, there is theoretically nothing that could wake the
+                # scheduler, but it is not allowed to exit either. We keep the code
+                # running so that a hypothetical debugger (or other such meta-process)
+                # can get a view of what is happening and possibly abort.
+                dt = 3
             # print('(poll {})'.format(dt), len(_io_queue.map))
             _io_queue.wait_io_event(dt)
 
@@ -186,30 +194,33 @@ def run_until_complete(main_task=None):
         except excs_all as er:
             # Check the task is not on any event queue
             assert t.data is None
-            # This task is done, check if it's the main task and then loop should stop
-            if t is main_task:
-                if isinstance(er, StopIteration):
-                    return er.value
-                raise er
+            # If it's the main task, it is considered as awaited by the caller
+            awaited = t is main_task
+            if awaited:
+                cur_task = None
+                if not isinstance(er, StopIteration):
+                    t.state = False
+                    raise er
+                if t.state is None:
+                    t.state = False
             if t.state:
                 # Task was running but is now finished.
-                waiting = False
                 if t.state is True:
                     # "None" indicates that the task is complete and not await'ed on (yet).
-                    t.state = None
+                    t.state = False if awaited else None
                 elif callable(t.state):
                     # The task has a callback registered to be called on completion.
                     t.state(t, er)
                     t.state = False
-                    waiting = True
+                    awaited = True
                 else:
                     # Schedule any other tasks waiting on the completion of this task.
                     while t.state.peek():
                         _task_queue.push(t.state.pop())
-                        waiting = True
+                        awaited = True
                     # "False" indicates that the task is complete and has been await'ed on.
                     t.state = False
-                if not waiting and not isinstance(er, excs_stop):
+                if not awaited and not isinstance(er, excs_stop):
                     # An exception ended this detached task, so queue it for later
                     # execution to handle the uncaught exception if no other task retrieves
                     # the exception in the meantime (this is handled by Task.throw).
@@ -219,9 +230,17 @@ def run_until_complete(main_task=None):
             elif t.state is None:
                 # Task is already finished and nothing await'ed on the task,
                 # so call the exception handler.
+
+                # Save exception raised by the coro for later use.
+                t.data = exc
+
+                # Create exception context and call the exception handler.
                 _exc_context["exception"] = exc
                 _exc_context["future"] = t
                 Loop.call_exception_handler(_exc_context)
+            # If it's the main task then the loop should stop
+            if t is main_task:
+                return er.value
 
 
 # Create a new task from a coroutine and run it until it finishes
@@ -237,6 +256,7 @@ async def _stopper():
     pass
 
 
+cur_task = None
 _stop_task = None
 
 
@@ -272,9 +292,9 @@ class Loop:
         return Loop._exc_handler
 
     def default_exception_handler(loop, context):
-        print(context["message"])
-        print("future:", context["future"], "coro=", context["future"].coro)
-        sys.print_exception(context["exception"])
+        print(context["message"], file=sys.stderr)
+        print("future:", context["future"], "coro=", context["future"].coro, file=sys.stderr)
+        sys.print_exception(context["exception"], sys.stderr)
 
     def call_exception_handler(context):
         (Loop._exc_handler or Loop.default_exception_handler)(Loop, context)
@@ -286,6 +306,8 @@ def get_event_loop(runq_len=0, waitq_len=0):
 
 
 def current_task():
+    if cur_task is None:
+        raise RuntimeError("no running event loop")
     return cur_task
 
 

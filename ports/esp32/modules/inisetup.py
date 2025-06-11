@@ -1,4 +1,4 @@
-import os
+import vfs
 from flashbdev import bdev
 
 
@@ -37,9 +37,13 @@ by firmware programming).
 def setup():
     check_bootsec()
     print("Performing initial setup")
-    os.VfsLfs2.mkfs(bdev)
-    vfs = os.VfsLfs2(bdev)
-    os.mount(vfs, "/")
+    if bdev.info()[4] == "vfs":
+        vfs.VfsLfs2.mkfs(bdev)
+        fs = vfs.VfsLfs2(bdev)
+    elif bdev.info()[4] == "ffat":
+        vfs.VfsFat.mkfs(bdev)
+        fs = vfs.VfsFat(bdev)
+    vfs.mount(fs, "/")
     with open("boot.py", "w") as f:
         f.write(
             """\
@@ -50,4 +54,4 @@ def setup():
 #webrepl.start()
 """
         )
-    return vfs
+    return fs
