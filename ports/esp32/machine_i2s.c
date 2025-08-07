@@ -27,13 +27,22 @@
 // This file is never compiled standalone, it's included directly from
 // extmod/machine_i2s.c via MICROPY_PY_MACHINE_I2S_INCLUDEFILE.
 
-#include "py/mphal.h"
-#include "py/runtime.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
 #include "py/obj.h"
-#include "py/objarray.h"
+#include "py/runtime.h"
 #include "py/misc.h"
+#include "py/stream.h"
+#include "py/objstr.h"
 #include "modmachine.h"
+#include "mphalport.h"
+
 #include "driver/i2s.h"
+#include "soc/i2s_reg.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -52,15 +61,6 @@ typedef enum {
     ASYNCIO,
 } io_mode_t;
 
-typedef struct _mp_arg_val_t {
-    union {
-        bool u_bool;
-        mp_int_t u_int;
-        mp_obj_t u_obj;
-        mp_rom_obj_t u_rom_obj;
-    };
-} mp_arg_val_t;
-
 // Missing constants
 #define NUM_I2S_USER_FORMATS (4)
 #define I2S_RX_FRAME_SIZE_IN_BYTES (8)
@@ -77,13 +77,6 @@ enum {
     ARG_rate,
     ARG_ibuf,
 };
-
-// Function to check ESP errors
-STATIC void check_esp_err(esp_err_t err) {
-    if (err != ESP_OK) {
-        mp_raise_OSError(err);
-    }
-}
 
 // External type declaration
 extern const mp_obj_type_t machine_i2s_type;
