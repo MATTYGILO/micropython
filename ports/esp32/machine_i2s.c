@@ -28,7 +28,7 @@
 // extmod/machine_i2s.c via MICROPY_PY_MACHINE_I2S_INCLUDEFILE.
 
 #include "py/mphal.h"
-#include "driver/i2s_std.h"
+#include "driver/i2s.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
