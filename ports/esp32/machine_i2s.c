@@ -28,11 +28,65 @@
 // extmod/machine_i2s.c via MICROPY_PY_MACHINE_I2S_INCLUDEFILE.
 
 #include "py/mphal.h"
+#include "py/runtime.h"
+#include "py/obj.h"
+#include "py/objarray.h"
+#include "py/misc.h"
+#include "modmachine.h"
 #include "driver/i2s.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "esp_task.h"
+#include "esp_err.h"
+
+// Missing type definitions
+typedef enum {
+    STEREO,
+    MONO,
+} format_t;
+
+typedef enum {
+    BLOCKING,
+    NON_BLOCKING,
+    ASYNCIO,
+} io_mode_t;
+
+typedef struct _mp_arg_val_t {
+    union {
+        bool u_bool;
+        mp_int_t u_int;
+        mp_obj_t u_obj;
+        mp_rom_obj_t u_rom_obj;
+    };
+} mp_arg_val_t;
+
+// Missing constants
+#define NUM_I2S_USER_FORMATS (4)
+#define I2S_RX_FRAME_SIZE_IN_BYTES (8)
+#define MICROPY_PY_MACHINE_I2S_CONSTANT_TX (I2S_MODE_MASTER | I2S_MODE_TX)
+
+// Argument indices
+enum {
+    ARG_sck,
+    ARG_ws,
+    ARG_sd,
+    ARG_mode,
+    ARG_bits,
+    ARG_format,
+    ARG_rate,
+    ARG_ibuf,
+};
+
+// Function to check ESP errors
+STATIC void check_esp_err(esp_err_t err) {
+    if (err != ESP_OK) {
+        mp_raise_OSError(err);
+    }
+}
+
+// External type declaration
+extern const mp_obj_type_t machine_i2s_type;
 
 // Notes on this port's specific implementation of I2S:
 // - a FreeRTOS task is created to implement the asynchronous background operations
@@ -282,9 +336,9 @@ STATIC void task_for_non_blocking_mode(void *self_in) {
 
 STATIC void mp_machine_i2s_init_helper(machine_i2s_obj_t *self, mp_arg_val_t *args) {
     // are Pins valid?
-    int8_t sck = args[ARG_sck].u_obj == MP_OBJ_NULL ? -1 : machine_pin_get_id(args[ARG_sck].u_obj);
-    int8_t ws = args[ARG_ws].u_obj == MP_OBJ_NULL ? -1 : machine_pin_get_id(args[ARG_ws].u_obj);
-    int8_t sd = args[ARG_sd].u_obj == MP_OBJ_NULL ? -1 : machine_pin_get_id(args[ARG_sd].u_obj);
+    int8_t sck = args[ARG_sck].u_obj == MP_OBJ_NULL ? -1 : mp_hal_get_pin_obj(args[ARG_sck].u_obj);
+    int8_t ws = args[ARG_ws].u_obj == MP_OBJ_NULL ? -1 : mp_hal_get_pin_obj(args[ARG_ws].u_obj);
+    int8_t sd = args[ARG_sd].u_obj == MP_OBJ_NULL ? -1 : mp_hal_get_pin_obj(args[ARG_sd].u_obj);
 
     // is Mode valid?
     int8_t mode = args[ARG_mode].u_int;
@@ -350,7 +404,7 @@ STATIC void mp_machine_i2s_init_helper(machine_i2s_obj_t *self, mp_arg_val_t *ar
         .bits_per_chan = I2S_BITS_PER_CHAN_DEFAULT,
     };
 
-    check_esp_err(i2s_driver_install(self->port, &i2s_config, 0, &self->i2s_event_queue));
+    check_esp_err(i2s_driver_install(self->port, &i2s_config, 0, NULL));
 
     i2s_pin_config_t pin_config = {
         .mck_io_num = I2S_PIN_NO_CHANGE,
@@ -370,7 +424,8 @@ STATIC machine_i2s_obj_t *mp_machine_i2s_make_new_instance(mp_int_t port) {
 
     machine_i2s_obj_t *self;
     if (MP_STATE_PORT(machine_i2s_obj)[port] == NULL) {
-        self = mp_obj_malloc_with_finaliser(machine_i2s_obj_t, &machine_i2s_type);
+        self = m_new_obj_with_finaliser(machine_i2s_obj_t);
+        self->base.type = &machine_i2s_type;
         MP_STATE_PORT(machine_i2s_obj)[port] = self;
         self->port = port;
     } else {
@@ -412,7 +467,7 @@ STATIC void mp_machine_i2s_irq_update(machine_i2s_obj_t *self) {
             self,
             I2S_TASK_PRIORITY,
             (TaskHandle_t *)&self->non_blocking_mode_task,
-            MP_TASK_COREID) != pdPASS) {
+            0) != pdPASS) {
 
             mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("failed to create I2S task"));
         }
